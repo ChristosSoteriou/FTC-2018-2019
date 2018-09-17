@@ -38,13 +38,13 @@ class PID {
         init(p, i, d, omn, omx);
     }
 
-    public void init (double p, double i, double d, double omn, double omx) {
+    public void init (double p, double i, double d, double _outputMin, double _outputMax) {
         kp = p;
         ki = i;
         kd = d;
 
-        outputMax = omx;
-        outputMin = omn;
+        outputMax = _outputMax;
+        outputMin = _outputMin;
 
         sampleTime = 5;
 

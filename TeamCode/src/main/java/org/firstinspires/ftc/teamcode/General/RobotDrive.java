@@ -4,25 +4,19 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.teamcode.General.PID;
 
-public class RobotDrive {
+public class RobotDrive extends ThreadHelper {
     public enum Direction {
         LEFT, RIGHT
     }
-
-    public enum ServoPos {
-        Down, Up
-    }
-
-    private ServoPos servoPos = ServoPos.Up;
 
     public static final float UNCHANGED = -999;
     private static final double P_DRIVE_COEFF = 0.1;
@@ -30,9 +24,7 @@ public class RobotDrive {
     private static final double I_TURN_COEFF = 0;
     private static final double D_TURN_COEFF = 0;
 
-    private static final double servoUpPosition = 0.25;
-    private static final double servoDownPosition = 0.61;
-
+    private Gamepad gamepad;
     private HardwareMap hardwareMap = null;
     public DcMotor left_drive, right_drive;
 
@@ -48,22 +40,20 @@ public class RobotDrive {
 
     private LinearOpMode opMode;
 
-    private Servo balancing_stone_servo;
-
-
     public RobotDrive() {}
 
-    public void init(LinearOpMode opMode, HardwareMap hm) {
-        init(opMode, hm, true);
+    public void init(LinearOpMode opMode, HardwareMap hm, Gamepad _gamepad) {
+        init(opMode, hm, _gamepad, true);
     }
 
     // Initialize the process
-    public void init(LinearOpMode opMode, HardwareMap hm, boolean eim) {
-
+    public void init(LinearOpMode opMode, HardwareMap hm, Gamepad _gamepad, boolean _encoderInMove) {
         hardwareMap = hm;
         this.opMode = opMode;
 
-        encoderInMove = eim;
+        encoderInMove = _encoderInMove;
+
+        gamepad = _gamepad;
 
         // Setup BNO055 built in IMU
         params = new BNO055IMU.Parameters();
@@ -78,10 +68,6 @@ public class RobotDrive {
         left_drive = hardwareMap.get(DcMotor.class, "leftDrive");
         right_drive = hardwareMap.get(DcMotor.class, "rightDrive");
 
-        // Initialize Servo
-        balancing_stone_servo = hardwareMap.get(Servo.class, "balancing_stone_servo");
-        balancing_stone_servo.setPosition(servoUpPosition);
-
         // Setting the direction of the motors
         left_drive.setDirection(DcMotorSimple.Direction.FORWARD);
         right_drive.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -94,6 +80,17 @@ public class RobotDrive {
         right_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         p_controller_TURN.init(P_TURN_COEFF, I_TURN_COEFF, D_TURN_COEFF, -1, 1);
+
+        super.init();
+    }
+
+    @Override
+    public void loop() {
+        float drive = gamepad.left_stick_y;
+        float turn  = -gamepad.left_stick_x;
+        float micro_turning = -gamepad.right_stick_x/2;
+        turn = turn + micro_turning;
+        move(drive + turn, drive - turn);
     }
 
     // Move the robot by giving it ONLY motor power
@@ -142,19 +139,6 @@ public class RobotDrive {
                 right_drive.setPower(0);
             }
         }
-    }
-
-    public void toggleBackServoPosition ( ) {
-        servoPos = servoPos == ServoPos.Down ? ServoPos.Up : ServoPos.Down;
-        balancing_stone_servo.setPosition(servoPos == ServoPos.Down ? servoDownPosition : servoUpPosition);
-    }
-
-    public void back_servo_up() {
-        balancing_stone_servo.setPosition(servoUpPosition);
-    }
-
-    public void back_servo_down() {
-        balancing_stone_servo.setPosition(servoDownPosition);
     }
 
     // Turning using the gyro
