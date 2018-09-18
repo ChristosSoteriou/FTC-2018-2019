@@ -21,9 +21,11 @@ public class TeleOpMode extends LinearOpMode {
         // Starting up the threads
         robotDrive.start();
 
-        // While not stopped
+        // While the program is not stopped
         while (opModeIsActive()) {
-
+            // Change Robot's drive speed with dpad
+            if (gamepad1.dpad_up) robotDrive.increamentMaxDriveSpeed();
+            else if (gamepad1.dpad_down) robotDrive.decreamentMaxDriveSpeed();
         }
 
         // Kill the threads

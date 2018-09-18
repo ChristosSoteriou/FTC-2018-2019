@@ -8,16 +8,6 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.teamcode.General.HelperClasses.ThreadHelper;
 
 public class RobotDrive extends ThreadHelper {
-    public enum Direction {
-        LEFT, RIGHT
-    }
-
-    public static final float UNCHANGED = -999;
-    private static final double P_DRIVE_COEFF = 0.1;
-    private static final double P_TURN_COEFF = 0.02;
-    private static final double I_TURN_COEFF = 0;
-    private static final double D_TURN_COEFF = 0;
-
     private Gamepad gamepad;
     private HardwareMap hardwareMap = null;
     public DcMotor left_drive, right_drive;
@@ -26,6 +16,10 @@ public class RobotDrive extends ThreadHelper {
 
     private int desired_en_left = 0;
     private int desired_en_right = 0;
+
+    // Variables to change the max speed of the robot on the fly
+    private double maxDriveSpeed;
+    private static double speedStep = 0.01;
 
     private LinearOpMode opMode;
 
@@ -59,16 +53,24 @@ public class RobotDrive extends ThreadHelper {
         left_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         right_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
+        setMaxDriveSpeed(0.7);
+
         super.init();
     }
 
     @Override
     public void loop() {
-        float drive = gamepad.left_stick_y;
-        float turn  = -gamepad.left_stick_x;
-        float micro_turning = -gamepad.right_stick_x/2;
-        turn = turn + micro_turning;
+        double drive = gamepad.left_stick_y * maxDriveSpeed;
+        double turn  = -gamepad.left_stick_x * maxDriveSpeed;
         move(drive + turn, drive - turn);
+    }
+
+    @Override
+    public void kill() {
+        super.kill();
+
+        left_drive.setPower(0);
+        right_drive.setPower(0);
     }
 
     // Move the robot by giving it ONLY motor power
@@ -93,7 +95,7 @@ public class RobotDrive extends ThreadHelper {
     }
 
     // Moving the robot by giving it a desired motor position
-    public void incrementMotorPosition (int l, int r, double power, boolean waitForAction) {
+    public void increamentMotorPosition (int l, int r, double power, boolean waitForAction) {
         if (!opMode.isStopRequested()) {
             // For using the build in PID motor control
             left_drive.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -117,6 +119,22 @@ public class RobotDrive extends ThreadHelper {
                 right_drive.setPower(0);
             }
         }
+    }
+
+    public void setMaxDriveSpeed(double _maxSpeed) {
+        maxDriveSpeed = maxDriveSpeed;
+    }
+    public double getMaxDriveSpeed() {
+        return maxDriveSpeed;
+    }
+
+    public void increamentMaxDriveSpeed() {
+        maxDriveSpeed += speedStep;
+        if (maxDriveSpeed > 1) maxDriveSpeed = 1;
+    }
+    public void decreamentMaxDriveSpeed() {
+        maxDriveSpeed -= speedStep;
+        if (maxDriveSpeed < 0) maxDriveSpeed = 0;
     }
 }
 
