@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.General;
+package org.firstinspires.ftc.teamcode.General.HelperClasses;
 
 import com.qualcomm.robotcore.util.ElapsedTime;
 

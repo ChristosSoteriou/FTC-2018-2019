@@ -1,17 +1,11 @@
-package org.firstinspires.ftc.teamcode.General;
+package org.firstinspires.ftc.teamcode.General.Robot;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
-import org.firstinspires.ftc.teamcode.General.PID;
+import org.firstinspires.ftc.teamcode.General.HelperClasses.ThreadHelper;
 
 public class RobotDrive extends ThreadHelper {
     public enum Direction {
@@ -27,11 +21,6 @@ public class RobotDrive extends ThreadHelper {
     private Gamepad gamepad;
     private HardwareMap hardwareMap = null;
     public DcMotor left_drive, right_drive;
-
-    private BNO055IMU imu;
-    private BNO055IMU.Parameters params;
-
-    private PID p_controller_TURN = new PID();
 
     private boolean encoderInMove = false;
 
@@ -55,15 +44,6 @@ public class RobotDrive extends ThreadHelper {
 
         gamepad = _gamepad;
 
-        // Setup BNO055 built in IMU
-        params = new BNO055IMU.Parameters();
-        params.angleUnit            = BNO055IMU.AngleUnit.DEGREES;
-        params.accelUnit            = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
-        params.calibrationDataFile  = "BNO055IMUCalibration.json";
-
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        imu.initialize(params);
-
         // Initialize Motors
         left_drive = hardwareMap.get(DcMotor.class, "leftDrive");
         right_drive = hardwareMap.get(DcMotor.class, "rightDrive");
@@ -78,8 +58,6 @@ public class RobotDrive extends ThreadHelper {
 
         left_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         right_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        p_controller_TURN.init(P_TURN_COEFF, I_TURN_COEFF, D_TURN_COEFF, -1, 1);
 
         super.init();
     }
@@ -139,42 +117,6 @@ public class RobotDrive extends ThreadHelper {
                 right_drive.setPower(0);
             }
         }
-    }
-
-    // Turning using the gyro
-    // TODO fix delay due to reinitialization of the object.
-    public void turn (double degrees, double power, double t, boolean useTime) {
-        imu.initialize(params);
-
-        ElapsedTime eTime = new ElapsedTime();
-        double current_angle = 0;
-        double target_angle = current_angle + degrees;
-
-        p_controller_TURN.setSetpoint(target_angle);
-
-        left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        eTime.reset();
-        while (opMode.opModeIsActive()) {
-            current_angle = getHeading();
-
-            double pow = power * p_controller_TURN.Compute(current_angle);
-            left_drive.setPower(pow);
-            right_drive.setPower(-pow);
-
-            boolean exitCondition;
-            if (useTime)  exitCondition = eTime.milliseconds() > t;
-            else exitCondition = Math.abs(current_angle - target_angle) <= t;
-
-            if (exitCondition) break;
-        }
-        left_drive.setPower(0);
-        right_drive.setPower(0);
-    }
-
-    private double getHeading() {
-        return imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES).firstAngle;
     }
 }
 

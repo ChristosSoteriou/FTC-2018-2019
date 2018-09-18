@@ -4,7 +4,7 @@
 //    use threads in a program fast and easy
 // -----------------------------------------------------
 
-package org.firstinspires.ftc.teamcode.General;
+package org.firstinspires.ftc.teamcode.General.HelperClasses;
 
 public abstract class ThreadHelper implements Runnable {
     // Declaring a Thread object
