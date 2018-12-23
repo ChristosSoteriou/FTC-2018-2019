@@ -6,6 +6,10 @@
 
 package org.firstinspires.ftc.teamcode.General.HelperClasses;
 
+import com.qualcomm.robotcore.robot.Robot;
+
+import org.firstinspires.ftc.teamcode.General.Robot.RobotDrive;
+
 public abstract class ThreadHelper implements Runnable {
     // Declaring a Thread object
     Thread thread;
@@ -15,7 +19,7 @@ public abstract class ThreadHelper implements Runnable {
     boolean paused = true;
 
     // initialization function
-    public void init () {
+    public void init() {
         thread = new Thread(this);
     }
 

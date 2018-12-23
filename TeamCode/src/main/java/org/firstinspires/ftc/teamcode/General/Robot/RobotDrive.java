@@ -5,38 +5,40 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.General.HelperClasses.ThreadHelper;
 
 public class RobotDrive extends ThreadHelper {
     private Gamepad gamepad;
-    private HardwareMap hardwareMap = null;
-    public DcMotor left_drive, right_drive;
+    private HardwareMap hardwareMap;
+    private DcMotor left_drive, right_drive;
 
     private boolean encoderInMove = false;
 
     private int desired_en_left = 0;
     private int desired_en_right = 0;
 
+    private boolean isEncoderInMove = false;
+
     // Variables to change the max speed of the robot on the fly
     private double maxDriveSpeed;
     private static double speedStep = 0.01;
 
     private LinearOpMode opMode;
+    private Telemetry telemetry;
 
     public RobotDrive() {}
 
-    public void init(LinearOpMode opMode, HardwareMap hm, Gamepad _gamepad) {
-        init(opMode, hm, _gamepad, true);
-    }
-
     // Initialize the process
-    public void init(LinearOpMode opMode, HardwareMap hm, Gamepad _gamepad, boolean _encoderInMove) {
-        hardwareMap = hm;
+    public void init(LinearOpMode opMode, HardwareMap hardwareMap, Gamepad gamepad, Telemetry telemetry, boolean _encoderInMove) {
+        this.hardwareMap = hardwareMap;
         this.opMode = opMode;
+        this.telemetry = telemetry;
 
         encoderInMove = _encoderInMove;
 
-        gamepad = _gamepad;
+        this.gamepad = gamepad;
 
         // Initialize Motors
         left_drive = hardwareMap.get(DcMotor.class, "leftDrive");
@@ -53,6 +55,9 @@ public class RobotDrive extends ThreadHelper {
         left_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         right_drive.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
+        left_drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        right_drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         setMaxDriveSpeed(0.7);
 
         super.init();
@@ -62,7 +67,8 @@ public class RobotDrive extends ThreadHelper {
     public void loop() {
         double drive = gamepad.left_stick_y * maxDriveSpeed;
         double turn  = -gamepad.left_stick_x * maxDriveSpeed;
-        move(drive + turn, drive - turn);
+        double microturning = -gamepad.right_stick_x * (2 * maxDriveSpeed / 3);
+        move(drive + turn + microturning, drive - turn - microturning);
     }
 
     @Override
@@ -76,13 +82,15 @@ public class RobotDrive extends ThreadHelper {
     // Move the robot by giving it ONLY motor power
     public void move(double powL, double powR) {
         // For using the motors without the use of the encoders
-        if (encoderInMove) {
-            left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        } else {
-            left_drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            right_drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        }
+//        if (encoderInMove && !isEncoderInMove) {
+//            left_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            right_drive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//            isEncoderInMove = true;
+//        } else if (!encoderInMove && isEncoderInMove){
+//            left_drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//            right_drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+//            isEncoderInMove = false;
+//        }
 
         if (powL != 0 && powR != 0) {
             desired_en_left = left_drive.getCurrentPosition();
@@ -121,8 +129,8 @@ public class RobotDrive extends ThreadHelper {
         }
     }
 
-    public void setMaxDriveSpeed(double _maxSpeed) {
-        maxDriveSpeed = maxDriveSpeed;
+    public void setMaxDriveSpeed(double maxSpeed) {
+        maxDriveSpeed = maxSpeed;
     }
     public double getMaxDriveSpeed() {
         return maxDriveSpeed;
